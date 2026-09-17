@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: flowboard-practice
+    runtime: python
+    plan: free
+    buildCommand: python -m compileall -q app.py kanban
+    startCommand: python app.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_PATH
+        value: /tmp/flowboard.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "1"
