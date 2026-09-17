@@ -1,0 +1,311 @@
+openapi: 3.0.3
+info:
+  title: FlowBoard API
+  version: 1.0.0
+  description: REST API личной канбан-доски FlowBoard.
+servers:
+  - url: http://localhost:8000
+tags:
+  - name: System
+  - name: Authentication
+  - name: Tasks
+  - name: Dashboard
+paths:
+  /api/health:
+    get:
+      tags: [System]
+      summary: Проверка сервера и базы
+      responses:
+        "200":
+          description: Сервис готов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: {type: string, example: ok}
+                  database: {type: string, example: ok}
+  /api/session:
+    get:
+      tags: [Authentication]
+      summary: Текущая сессия
+      responses:
+        "200":
+          description: Анонимная или авторизованная сессия
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+  /api/register:
+    post:
+      tags: [Authentication]
+      summary: Зарегистрироваться
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [display_name, email, password]
+              properties:
+                display_name: {type: string, minLength: 2, maxLength: 80, example: Алексей}
+                email: {type: string, format: email, example: user@example.com}
+                password: {type: string, format: password, minLength: 8, example: Strong123}
+      responses:
+        "201":
+          description: Аккаунт и сессия созданы
+          headers:
+            Set-Cookie:
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Session"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+  /api/login:
+    post:
+      tags: [Authentication]
+      summary: Войти
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: {type: string, format: email, example: demo@example.com}
+                password: {type: string, format: password, example: Demo123!}
+      responses:
+        "200":
+          description: Сессия создана
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Session"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+        "429": {$ref: "#/components/responses/TooManyRequests"}
+  /api/logout:
+    post:
+      tags: [Authentication]
+      summary: Выйти
+      security: [{cookieAuth: [], csrfToken: []}]
+      responses:
+        "204":
+          description: Cookie очищена
+        "403": {$ref: "#/components/responses/Forbidden"}
+  /api/tasks:
+    get:
+      tags: [Tasks]
+      summary: Список своих задач
+      security: [{cookieAuth: []}]
+      parameters:
+        - in: query
+          name: query
+          schema: {type: string}
+          description: Поиск по названию и описанию
+        - in: query
+          name: status
+          schema: {$ref: "#/components/schemas/Status"}
+        - in: query
+          name: priority
+          schema: {$ref: "#/components/schemas/Priority"}
+      responses:
+        "200":
+          description: Задачи
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items: {$ref: "#/components/schemas/Task"}
+        "401": {$ref: "#/components/responses/Unauthorized"}
+    post:
+      tags: [Tasks]
+      summary: Создать задачу
+      security: [{cookieAuth: [], csrfToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/TaskInput"}
+      responses:
+        "201":
+          description: Задача создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task: {$ref: "#/components/schemas/Task"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "403": {$ref: "#/components/responses/Forbidden"}
+  /api/tasks/{taskId}:
+    parameters:
+      - in: path
+        name: taskId
+        required: true
+        schema: {type: integer, minimum: 1}
+    put:
+      tags: [Tasks]
+      summary: Изменить или переместить свою задачу
+      security: [{cookieAuth: [], csrfToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - {$ref: "#/components/schemas/TaskInput"}
+                - type: object
+                  properties:
+                    version: {type: integer, minimum: 1}
+                    position: {type: integer, minimum: 0}
+      responses:
+        "200":
+          description: Задача обновлена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task: {$ref: "#/components/schemas/Task"}
+        "400": {$ref: "#/components/responses/BadRequest"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    delete:
+      tags: [Tasks]
+      summary: Удалить свою задачу
+      security: [{cookieAuth: [], csrfToken: []}]
+      responses:
+        "204":
+          description: Задача удалена
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/stats:
+    get:
+      tags: [Dashboard]
+      summary: Сводная статистика
+      security: [{cookieAuth: []}]
+      responses:
+        "200":
+          description: Счётчики текущего аккаунта
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats: {$ref: "#/components/schemas/Stats"}
+  /api/activity:
+    get:
+      tags: [Dashboard]
+      summary: Последние действия
+      security: [{cookieAuth: []}]
+      responses:
+        "200":
+          description: Журнал текущего аккаунта
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activity:
+                    type: array
+                    items: {$ref: "#/components/schemas/Activity"}
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: flowboard_session
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+  schemas:
+    User:
+      type: object
+      required: [id, email, display_name, role]
+      properties:
+        id: {type: integer, example: 1}
+        email: {type: string, format: email, example: demo@example.com}
+        display_name: {type: string, example: Демо пользователь}
+        role: {type: string, enum: [user, admin], example: user}
+    Session:
+      type: object
+      required: [authenticated]
+      properties:
+        authenticated: {type: boolean, example: true}
+        user: {$ref: "#/components/schemas/User"}
+        csrf_token: {type: string, example: signed-token}
+    Status:
+      type: string
+      enum: [backlog, in_progress, done]
+    Priority:
+      type: string
+      enum: [low, medium, high]
+    TaskInput:
+      type: object
+      properties:
+        title: {type: string, minLength: 1, maxLength: 120, example: Подготовить демо}
+        description: {type: string, maxLength: 1000, example: Записать основной сценарий}
+        status: {$ref: "#/components/schemas/Status"}
+        priority: {$ref: "#/components/schemas/Priority"}
+        due_date: {type: string, format: date, nullable: true, example: "2026-09-23"}
+    Task:
+      allOf:
+        - {$ref: "#/components/schemas/TaskInput"}
+        - type: object
+          required: [id, position, version, created_at, updated_at]
+          properties:
+            id: {type: integer, example: 4}
+            position: {type: integer, example: 20}
+            version: {type: integer, example: 1}
+            created_at: {type: string, example: "2026-09-17 10:00:00"}
+            updated_at: {type: string, example: "2026-09-17 10:00:00"}
+    Stats:
+      type: object
+      properties:
+        total: {type: integer, example: 8}
+        backlog: {type: integer, example: 3}
+        in_progress: {type: integer, example: 2}
+        done: {type: integer, example: 3}
+        overdue: {type: integer, example: 1}
+    Activity:
+      type: object
+      properties:
+        action: {type: string, example: task_moved}
+        details: {type: string, example: Подготовить демо}
+        created_at: {type: string, example: "2026-09-17 10:00:00"}
+    Ok:
+      type: object
+      properties:
+        ok: {type: boolean, example: true}
+    Error:
+      type: object
+      properties:
+        error: {type: string, example: Описание ошибки}
+  responses:
+    BadRequest:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    Unauthorized:
+      description: Нужен вход или вход неверен
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    Forbidden:
+      description: Не пройдена CSRF-проверка
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    NotFound:
+      description: Задача не найдена или не принадлежит аккаунту
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    TooManyRequests:
+      description: Превышен лимит попыток
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}

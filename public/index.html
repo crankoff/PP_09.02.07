@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="FlowBoard — канбан-доска для личных и учебных задач">
+    <title>FlowBoard — задачи в потоке</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <main id="auth-view" class="auth-layout">
+      <section class="auth-story" aria-labelledby="auth-heading">
+        <a class="brand" href="/" aria-label="FlowBoard">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>FlowBoard</span>
+        </a>
+        <div class="story-copy">
+          <p class="eyebrow">Порядок без лишнего шума</p>
+          <h1 id="auth-heading">Видьте работу.<br><span>Двигайте дела.</span></h1>
+          <p class="story-lead">Личная канбан-доска, где задачи проходят понятный путь: от идеи до готового результата.</p>
+          <ul class="feature-list">
+            <li><span>01</span>Приоритеты и сроки в одном взгляде</li>
+            <li><span>02</span>Быстрое перемещение между этапами</li>
+            <li><span>03</span>Изолированные данные каждого аккаунта</li>
+          </ul>
+        </div>
+        <p class="story-note">Учебный full-stack проект по специальности 09.02.07</p>
+      </section>
+
+      <section class="auth-panel" aria-label="Вход и регистрация">
+        <div class="auth-card">
+          <p class="section-kicker">Добро пожаловать</p>
+          <h2 id="auth-title">Вход в FlowBoard</h2>
+          <p id="auth-subtitle" class="muted">Продолжите работу со своей доской</p>
+          <form id="auth-form" novalidate>
+            <label id="name-field" class="field" hidden>
+              <span>Имя</span>
+              <input id="display-name" name="display_name" autocomplete="name" maxlength="80" placeholder="Алексей">
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@example.com">
+            </label>
+            <label class="field">
+              <span>Пароль</span>
+              <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Не менее 8 символов">
+            </label>
+            <p id="auth-error" class="form-error" role="alert"></p>
+            <button id="auth-submit" class="button button-primary button-wide" type="submit">Войти</button>
+          </form>
+          <div class="divider"><span>или</span></div>
+          <button id="demo-login" class="button button-secondary button-wide" type="button">Открыть демо-доску</button>
+          <p class="auth-switch"><span id="switch-copy">Нет аккаунта?</span> <button id="auth-switch" type="button">Создать</button></p>
+        </div>
+      </section>
+    </main>
+
+    <div id="app-view" class="app-shell" hidden>
+      <header class="topbar">
+        <a class="brand brand-compact" href="/" aria-label="FlowBoard">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>FlowBoard</span>
+        </a>
+        <div class="toolbar">
+          <label class="search-control">
+            <span class="sr-only">Поиск задач</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m21 21-4.3-4.3m2.3-5.2a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
+            <input id="search" type="search" placeholder="Найти задачу">
+          </label>
+          <label class="select-control">
+            <span class="sr-only">Фильтр по приоритету</span>
+            <select id="priority-filter">
+              <option value="">Все приоритеты</option>
+              <option value="high">Высокий</option>
+              <option value="medium">Средний</option>
+              <option value="low">Низкий</option>
+            </select>
+          </label>
+          <button id="new-task" class="button button-primary" type="button"><span aria-hidden="true">+</span> Новая задача</button>
+          <div class="profile">
+            <span id="profile-avatar" class="avatar" aria-hidden="true">Ф</span>
+            <div><strong id="profile-name">Пользователь</strong><small id="profile-email"></small></div>
+            <button id="logout" class="icon-button" type="button" title="Выйти" aria-label="Выйти">→</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="workspace-heading">
+          <div>
+            <p class="eyebrow">Личное пространство</p>
+            <h1>Мой рабочий поток</h1>
+            <p class="muted">Перетаскивайте карточки или используйте кнопки статуса</p>
+          </div>
+          <div class="stats" aria-label="Статистика доски">
+            <div><strong id="stat-total">0</strong><span>всего</span></div>
+            <div><strong id="stat-progress">0</strong><span>в работе</span></div>
+            <div><strong id="stat-done">0</strong><span>готово</span></div>
+            <div class="stat-warning"><strong id="stat-overdue">0</strong><span>просрочено</span></div>
+          </div>
+        </section>
+
+        <section id="board" class="board" aria-label="Канбан-доска">
+          <article class="column" data-status="backlog">
+            <header><span class="column-dot dot-sand"></span><h2>План</h2><span class="column-count" data-count="backlog">0</span></header>
+            <div class="task-list" data-list="backlog"></div>
+            <button class="add-inline" data-add-status="backlog" type="button">+ Добавить в план</button>
+          </article>
+          <article class="column" data-status="in_progress">
+            <header><span class="column-dot dot-teal"></span><h2>В работе</h2><span class="column-count" data-count="in_progress">0</span></header>
+            <div class="task-list" data-list="in_progress"></div>
+            <button class="add-inline" data-add-status="in_progress" type="button">+ Добавить в работу</button>
+          </article>
+          <article class="column" data-status="done">
+            <header><span class="column-dot dot-violet"></span><h2>Готово</h2><span class="column-count" data-count="done">0</span></header>
+            <div class="task-list" data-list="done"></div>
+            <button class="add-inline" data-add-status="done" type="button">+ Добавить в готовые</button>
+          </article>
+        </section>
+
+        <section class="activity-section" aria-labelledby="activity-title">
+          <div><p class="eyebrow">Журнал</p><h2 id="activity-title">Последние изменения</h2></div>
+          <ol id="activity-list" class="activity-list"></ol>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="task-dialog" class="task-dialog">
+      <form id="task-form" method="dialog">
+        <div class="dialog-heading">
+          <div><p class="section-kicker">Карточка задачи</p><h2 id="dialog-title">Новая задача</h2></div>
+          <button id="dialog-close" class="icon-button" type="button" aria-label="Закрыть">×</button>
+        </div>
+        <input id="task-id" type="hidden">
+        <input id="task-version" type="hidden">
+        <label class="field"><span>Название</span><input id="task-title" maxlength="120" required placeholder="Например, подготовить отчёт"></label>
+        <label class="field"><span>Описание</span><textarea id="task-description" maxlength="1000" rows="4" placeholder="Краткий контекст и критерий готовности"></textarea></label>
+        <div class="form-grid">
+          <label class="field"><span>Статус</span><select id="task-status"><option value="backlog">План</option><option value="in_progress">В работе</option><option value="done">Готово</option></select></label>
+          <label class="field"><span>Приоритет</span><select id="task-priority"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></label>
+          <label class="field"><span>Срок</span><input id="task-due" type="date"></label>
+        </div>
+        <p id="task-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button id="delete-task" class="button button-danger" type="button" hidden>Удалить</button>
+          <span></span>
+          <button id="task-cancel" class="button button-secondary" type="button">Отмена</button>
+          <button class="button button-primary" type="submit">Сохранить</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
