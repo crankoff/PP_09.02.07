@@ -87,14 +87,6 @@ python3 scripts/db_admin.py restore backups/flowboard.db --force
 - [План и результаты тестирования](docs/test-plan.md)
 - [Развёртывание](docs/deployment.md)
 
-## Отчёты по практике
-
-- [Отчёт ПМ.02](reports/Отчет_ПМ02_FlowBoard.docx)
-- [Отчёт ПМ.11](reports/Отчет_ПМ11_FlowBoard.docx)
-- [Чек-лист перед сдачей](reports/README.md)
-
-В отчётах оставлены пустыми только неизвестные персональные поля: ФИО, курс, группа, оценки и подписи.
-
 ## Docker
 
 ```bash
@@ -129,7 +121,6 @@ migrations/        versioned SQL schema
 scripts/           database administration
 tests/             unit, integration and HTTP API tests
 docs/              architecture, DB, requirements, test plan, deployment
-reports/           practice reports and submission checklist
 openapi.yaml       REST API contract
 ```
 
